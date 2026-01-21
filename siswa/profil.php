@@ -1,0 +1,101 @@
+<?php
+session_start();
+include '../config/config.php';
+if (!isset($_SESSION['login'])) { header("Location: login.php"); exit; }
+
+$username = $_SESSION['username'];
+$query = mysqli_query($conn, "SELECT * FROM siswa WHERE username = '$username'");
+$user = mysqli_fetch_assoc($query);
+
+if (isset($_POST['update'])) {
+    $nama = mysqli_real_escape_string($conn, $_POST['nama']);
+    $jk = $_POST['jenis_kelamin'];
+    
+    // Logika Upload Foto
+    $nama_foto = $_FILES['foto']['name'];
+    $tmp_name = $_FILES['foto']['tmp_name'];
+    
+    if ($nama_foto != "") {
+        move_uploaded_file($tmp_name, "../assets/img/" . $nama_foto);
+        $update_query = "UPDATE siswa SET nama='$nama', jenis_kelamin='$jk', foto='$nama_foto' WHERE username='$username'";
+    } else {
+        $update_query = "UPDATE siswa SET nama='$nama', jenis_kelamin='$jk' WHERE username='$username'";
+    }
+
+    if (mysqli_query($conn, $update_query)) {
+        $_SESSION['nama'] = $nama; // Update session nama
+        echo "<script>alert('Profil Berhasil Diperbarui!'); window.location='profil.php';</script>";
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Profil - SMA Nusa Indah</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f4f7f6; }
+        #sidebar { background: #003366; min-height: 100vh; width: 260px; position: fixed; color: white; }
+        .sidebar-logo { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo img { width: 50px; }
+        .nav-link { color: rgba(255,255,255,0.7); padding: 15px 25px; }
+        .nav-link:hover, .nav-link.active { color: white; background: #0d6efd; }
+        .content { margin-left: 260px; padding: 30px; }
+        .profile-img { width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="sidebar-logo">
+            <img src="../assets/img/logo.png" alt="Logo">
+            <h6 class="mb-0 fw-bold">SMA NUSA INDAH</h6>
+        </div>
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item"><a href="dashboard.php" class="nav-link"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="presensi.php" class="nav-link"><i class="bi bi-calendar-check me-2"></i> Presensi</a></li>
+            <li class="nav-item"><a href="riwayat.php" class="nav-link"><i class="bi bi-clock-history me-2"></i> Riwayat</a></li>
+            <li class="nav-item"><a href="profil.php" class="nav-link active"><i class="bi bi-person me-2"></i> Profil</a></li>
+            <li class="nav-item mt-5"><a href="logout.php" class="nav-link text-warning"><i class="bi bi-box-arrow-left me-2"></i> Logout</a></li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <h4 class="fw-bold text-primary mb-4">Pengaturan Profil</h4>
+        
+        <div class="card border-0 shadow-sm p-4 rounded-4">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="text-center mb-4">
+                    <img src="../assets/img/<?= $user['foto'] ? $user['foto'] : 'default.png'; ?>" class="profile-img mb-3">
+                    <br>
+                    <label class="btn btn-outline-primary btn-sm">
+                        Ganti Foto <input type="file" name="foto" hidden>
+                    </label>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Nama Lengkap</label>
+                        <input type="text" name="nama" class="form-control" value="<?= $user['nama']; ?>" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Jenis Kelamin</label>
+                        <select name="jenis_kelamin" class="form-control" required>
+                            <option value="">-- Pilih --</option>
+                            <option value="Laki-laki" <?= $user['jenis_kelamin'] == 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
+                            <option value="Perempuan" <?= $user['jenis_kelamin'] == 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" name="update" class="btn btn-primary px-5">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
